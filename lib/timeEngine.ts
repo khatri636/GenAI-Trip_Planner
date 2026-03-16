@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function calculateTimeline(startTime: string, activities: any[]) {
 
   const timeline:any[] = []

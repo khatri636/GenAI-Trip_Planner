@@ -11,16 +11,16 @@ async function testItinerary() {
     days: 2,
     places: [
       { name: "City Palace", rating: 4.5 },
-      { name: "Lake Pichola", rating: 4.7 }
+      { name: "Lake Pichola", rating: 4.7 },
     ],
     restaurants: [
       { name: "Bayleaf Udaipur", rating: 4.7 },
-      { name: "Taj Lake Palace", rating: 4.8 }
+      { name: "Taj Lake Palace", rating: 4.8 },
     ],
     hotels: [
       { name: "Hotel A", rating: 4.5 },
-      { name: "Hotel B", rating: 4.6 }
-    ]
+      { name: "Hotel B", rating: 4.6 },
+    ],
   };
 
   const prompt = `
@@ -61,8 +61,11 @@ Return ONLY valid JSON in this exact format with no additional text or markdown:
 
   try {
     console.log("Generating itinerary...");
-    
+
     const config = {
+      thinkingConfig: {
+        thinkingLevel: "HIGH",
+      },
       tools: [
         {
           googleSearch: {},
@@ -97,16 +100,16 @@ Return ONLY valid JSON in this exact format with no additional text or markdown:
 
     console.log("Raw response length:", fullText.length);
     console.log("Raw response preview:", fullText.substring(0, 500));
-    
+
     // Extract JSON from response
     const jsonMatch = fullText.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error("No JSON found in response");
     }
-    
+
     const cleaned = jsonMatch[0];
     const result = JSON.parse(cleaned);
-    
+
     console.log("Success!");
     console.log(JSON.stringify(result, null, 2));
   } catch (error) {
