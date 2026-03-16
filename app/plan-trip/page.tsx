@@ -55,13 +55,13 @@ export default function PlanTrip() {
 
       // Pick top-rated options
       const topPlaces = (placesData || [])
-        .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
+        .sort((a: Place, b: Place) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 10);
       const topRestaurants = (foodData || [])
-        .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
+        .sort((a: Place, b: Place) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 10);
       const topHotels = (hotelsData || [])
-        .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
+        .sort((a: Place, b: Place) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 5);
 
       // Call LLM API
@@ -95,30 +95,30 @@ export default function PlanTrip() {
         <input
           placeholder="Destination"
           value={destination}
-          onChange={(e) => setDestination(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDestination(e.target.value)}
           className="p-3 rounded bg-gray-800"
         />
         <input
           placeholder="Budget"
           value={budget}
-          onChange={(e) => setBudget(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBudget(e.target.value)}
           className="p-3 rounded bg-gray-800"
         />
         <input
           placeholder="Number of Days"
           value={days}
-          onChange={(e) => setDays(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDays(e.target.value)}
           className="p-3 rounded bg-gray-800"
         />
         <input
           type="time"
           value={arrivalTime}
-          onChange={(e) => setArrivalTime(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setArrivalTime(e.target.value)}
           className="p-3 rounded bg-gray-800"
         />
         <select
           value={tripType}
-          onChange={(e) => setTripType(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTripType(e.target.value)}
           className="p-3 rounded bg-gray-800"
         >
           <option>Solo</option>
@@ -133,7 +133,7 @@ export default function PlanTrip() {
       </div>
 
       <div className="mt-12 max-w-md space-y-10">
-        {generatedDays.map((day) => {
+        {generatedDays.map((day: number) => {
           const dayPlan = aiPlan[`day${day}`] || [];
 
           return (
@@ -148,7 +148,7 @@ export default function PlanTrip() {
                 options={
                   hotels.length
                     ? hotels.map(
-                        (h) => `${cleanName(h.name)} ⭐ ${h.rating ?? "4.0"}`
+                        (h: Place) => `${cleanName(h.name)} ⭐ ${h.rating ?? "4.0"}`
                       )
                     : ["Loading hotels..."]
                 }

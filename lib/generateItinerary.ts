@@ -1,18 +1,4 @@
-const aiRes = await fetch("/api/ai-itinerary", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    destination,
-    arrival: arrivalTime,
-    days: totalDays,
-    places: placesData,
-    restaurants: foodData,
-    hotels: hotelsData
-  })
-})
+// Itinerary generation logic is handled in app/plan-trip/page.tsx
+// This file is kept for reference only
 
-const llmPlan = await aiRes.json()
-
-setAiPlan(llmPlan)
+export {};
