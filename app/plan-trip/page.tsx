@@ -6,8 +6,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import ItineraryCard from "../../components/ItineraryCard";
 import MapView from "../../components/Map";
 import LoadingOverlay from "../../components/LoadingOverlay";
+// @ts-ignore - react-icons submodules
 import { HiSparkles } from "react-icons/hi2";
+// @ts-ignore - react-icons submodules
 import { FaMapLocationDot, FaCalendar, FaMoneyBillWave, FaClock, FaUser, FaLeaf, FaUtensils, FaFloppyDisk } from "react-icons/fa6";
+// @ts-ignore - react-icons submodules
 import { MdFlightTakeoff, MdDirectionsRun } from "react-icons/md";
 
 type Place = {
@@ -57,6 +60,37 @@ function PlanTripContent() {
   const [activeDay, setActiveDay] = useState<number>(1);
 
   const cleanName = (name: string) => name.split("|")[0].trim();
+
+  // Helper function to find restaurants by area/location
+  const findRestaurantByArea = (activityStr: string): Place | undefined => {
+    // Extract area names (after @ or last capitalized word sequence)
+    const areaPatterns = [
+      /@\s*([A-Za-z\s]+?)(?:\s*-|,|$)/,  // @Jia Sarai
+      /(?:at|in)\s+([A-Z][A-Za-z\s]+?)(?:\s*-|,|$)/,  // at Jia Sarai
+    ];
+    
+    for (const pattern of areaPatterns) {
+      const match = activityStr.match(pattern);
+      if (match && match[1]) {
+        const areaName = match[1].trim().toLowerCase();
+        // Search in restaurants and places for area mentions
+        const found = restaurants.find(r => 
+          r.name.toLowerCase().includes(areaName)
+        );
+        if (found) return found;
+      }
+    }
+    
+    // Try to find restaurants that are in the same general category (food/dining)
+    if (activityStr.toLowerCase().includes('lunch') || 
+        activityStr.toLowerCase().includes('dinner') || 
+        activityStr.toLowerCase().includes('breakfast') ||
+        activityStr.toLowerCase().includes('eat')) {
+      return restaurants[0]; // Return first restaurant as fallback for food activities
+    }
+    
+    return undefined;
+  };
 
   useEffect(() => {
     const tripId = searchParams.get("tripId");
@@ -204,10 +238,84 @@ function PlanTripContent() {
 
   const enrichActivity = (item: any) => {
     const activityStr = item.activity || "";
-    const match = [...places, ...restaurants].find(p => 
-      activityStr.toLowerCase().includes(p.name.toLowerCase()) || 
-      p.name.toLowerCase().includes(activityStr.toLowerCase())
+    const allLocations = [...places, ...restaurants, ...hotels];
+    
+    // Enhanced matching logic with multiple strategies
+    let match = null;
+    const activityLower = activityStr.toLowerCase();
+    const activityWords = activityStr.split(/[\s,@.-]+/).filter((w: string) => w.length > 2);
+    
+    // 1. Try exact substring match
+    match = allLocations.find(p => 
+      activityLower.includes(p.name.toLowerCase()) || 
+      p.name.toLowerCase().includes(activityLower)
     );
+    
+    // 2. If no exact match, try @ symbol splitting (e.g., "Dilli6@Jia Sarai")
+    if (!match && activityStr.includes('@')) {
+      const parts = activityStr.split('@');
+      for (const part of parts) {
+        const partTrim = part.trim().toLowerCase();
+        match = allLocations.find(p => 
+          p.name.toLowerCase().includes(partTrim) ||
+          partTrim.includes(p.name.toLowerCase())
+        );
+        if (match) break;
+      }
+    }
+    
+    // 3. Extract place name from common meal/activity phrases
+    if (!match) {
+      const phrases = ['at ', 'in ', 'visit ', 'explore ', 'reach ', 'check-in at ', 'lunch at ', 'dinner at ', 'breakfast at ', 'hotel ', 'stay at ', 'go to '];
+      for (const phrase of phrases) {
+        const idx = activityLower.indexOf(phrase);
+        if (idx !== -1) {
+          let placeName = activityStr.substring(idx + phrase.length).split(/[,;]/)[0].trim();
+          // Remove @ and everything after it if present
+          if (placeName.includes('@')) {
+            placeName = placeName.split('@')[0].trim();
+          }
+          if (placeName.length > 2) {
+            match = allLocations.find(p => 
+              p.name.toLowerCase().includes(placeName.toLowerCase()) ||
+              placeName.toLowerCase().includes(p.name.toLowerCase())
+            );
+            if (match) break;
+          }
+        }
+      }
+    }
+    
+    // 4. Try matching with individual words (prioritize longer words)
+    if (!match) {
+      const sortedWords = [...activityWords].sort((a, b) => b.length - a.length);
+      for (const word of sortedWords) {
+        const wordLower = word.toLowerCase();
+        match = allLocations.find(p => {
+          const pNameLower = p.name.toLowerCase();
+          return pNameLower.includes(wordLower) || wordLower.includes(pNameLower);
+        });
+        if (match) break;
+      }
+    }
+    
+    // 5. Try partial word matching (at least 70% match of word)
+    if (!match) {
+      for (const word of activityWords) {
+        match = allLocations.find(p => {
+          const pWords = p.name.split(/[\s,-]+/).map(w => w.toLowerCase());
+          return pWords.some(pw => pw.startsWith(word.toLowerCase().substring(0, 3)));
+        });
+        if (match) break;
+      }
+    }
+    
+    // 6. Final fallback - try area-based search for food activities
+    if (!match) {
+      const areaMatch = findRestaurantByArea(activityStr);
+      if (areaMatch) match = areaMatch;
+    }
+    
     if (match) {
       return {
         name: activityStr,
